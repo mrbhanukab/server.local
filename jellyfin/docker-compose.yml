@@ -1,0 +1,172 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8080:8080 # qBittorrent Web UI
+      - 9696:9696 # Prowlarr Web UI
+    environment:
+      - VPN_SERVICE_PROVIDER=airvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - FIREWALL_VPN_INPUT_PORTS=${FIREWALL_VPN_INPUT_PORTS}
+      - TZ=${TZ}
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD", "read", "-t", "5", "<", "/dev/null"] # Basic check if container is alive
+      # For a better VPN check, Gluetun has a built-in health server usually on port 8000
+      # But since we want to be sure about the tunnel:
+      # test: ["CMD-SHELL", "curl -f https://1.1.1.1 || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  qbittorrent:
+    image: ghcr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+    volumes:
+      - ./qbittorrent:/config
+      - ${MEDIA_DIR}:/data
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: always
+
+  prowlarr:
+    image: ghcr.io/linuxserver/prowlarr
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./prowlarr:/config
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: always
+
+  sonarr:
+    image: ghcr.io/linuxserver/sonarr
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./sonarr:/config
+      - ${MEDIA_DIR}:/data
+    ports:
+      - 8989:8989
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8989/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  radarr:
+    image: ghcr.io/linuxserver/radarr
+    container_name: radarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./radarr:/config
+      - ${MEDIA_DIR}:/data
+    ports:
+      - 7878:7878
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7878/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  bazarr:
+    image: ghcr.io/linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./bazarr:/config
+      - ${MEDIA_DIR}:/data
+    ports:
+      - 6767:6767
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6767 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  jellyseerr:
+    image: ghcr.io/fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./jellyseerr:/app/config
+    ports:
+      - 5055:5055
+    networks:
+      - media_net
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  jellyfin:
+    image: ghcr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./jellyfin:/config
+      - ${MEDIA_DIR}:/data
+    ports:
+      - 8096:8096
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+networks:
+  media_net:
+    name: media_net
+    driver: bridge
