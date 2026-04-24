@@ -20,10 +20,7 @@ services:
     networks:
       - media_net
     healthcheck:
-      test: ["CMD", "read", "-t", "5", "<", "/dev/null"] # Basic check if container is alive
-      # For a better VPN check, Gluetun has a built-in health server usually on port 8000
-      # But since we want to be sure about the tunnel:
-      # test: ["CMD-SHELL", "curl -f https://1.1.1.1 || exit 1"]
+      test: ["CMD-SHELL", "curl -f https://1.1.1.1 || exit 1"]
       interval: 1m
       timeout: 10s
       retries: 3
