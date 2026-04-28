@@ -16,11 +16,11 @@ if [ -z "$WARP_TOKEN" ]; then
 fi
 
 echo "Registering WARP connector with token..."
-# Using --accept-tos to handle the prompt automatically
-warp-cli --accept-tos connector new "$WARP_TOKEN"
+# Using the exact command for connector mode
+warp-cli connector new "$WARP_TOKEN"
 
 echo "Connecting WARP..."
-warp-cli --accept-tos connect
+warp-cli connect
 
 # Keep the container alive by waiting on the warp-svc process
 wait $WARP_PID
