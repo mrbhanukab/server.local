@@ -25,6 +25,9 @@ else
     echo "Existing registration found. Skipping registration..."
 fi
 
+echo "Enabling NAT for mesh routing..."
+iptables -t nat -A POSTROUTING -j MASQUERADE
+
 echo "Connecting WARP..."
 # Always include --accept-tos for non-interactive environments
 warp-cli --accept-tos connect

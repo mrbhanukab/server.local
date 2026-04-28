@@ -141,7 +141,8 @@ services:
     environment:
       - WARP_TOKEN=${WARP_TOKEN}
     networks:
-      - cf_mesh_net
+      cf_mesh_net:
+        ipv4_address: 10.99.99.2
     restart: always
 
   jellyseerr:
@@ -156,8 +157,9 @@ services:
     ports:
       - 5055:5055
     networks:
-      - media_net
-      - cf_mesh_net
+      media_net:
+      cf_mesh_net:
+        ipv4_address: 10.99.99.5
     healthcheck:
       test:
         ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/status || exit 1"]
@@ -179,8 +181,9 @@ services:
     ports:
       - 8096:8096
     networks:
-      - media_net
-      - cf_mesh_net
+      media_net:
+      cf_mesh_net:
+        ipv4_address: 10.99.99.6
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
@@ -195,3 +198,6 @@ networks:
   cf_mesh_net:
     name: cf_mesh_net
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.99.99.0/24
