@@ -125,6 +125,21 @@ services:
       retries: 3
     restart: always
 
+  cloudflare-warp:
+    build: ./cloudflare
+    container_name: cloudflare-warp
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.all.accept_ra=2
+    environment:
+      - WARP_TOKEN=${WARP_TOKEN}
+    networks:
+      - cf_mesh_net
+    restart: always
+
   jellyseerr:
     image: ghcr.io/fallenbagel/jellyseerr:latest
     container_name: jellyseerr
@@ -138,6 +153,7 @@ services:
       - 5055:5055
     networks:
       - media_net
+      - cf_mesh_net
     healthcheck:
       test:
         ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/status || exit 1"]
@@ -160,6 +176,7 @@ services:
       - 8096:8096
     networks:
       - media_net
+      - cf_mesh_net
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
@@ -170,4 +187,7 @@ services:
 networks:
   media_net:
     name: media_net
+    driver: bridge
+  cf_mesh_net:
+    name: cf_mesh_net
     driver: bridge
