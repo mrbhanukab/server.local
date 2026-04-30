@@ -59,7 +59,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ./crowdsec/acquis.d:/etc/crowdsec/acquis.d:ro
-      - ./crowdsec/scenarios/http-crawl-non_statics.yaml:/etc/crowdsec/scenarios/http-crawl-non_statics.yaml:ro      - crowdsec_data:/var/lib/crowdsec/data
+      - ./crowdsec/scenarios/http-crawl-non_statics.yaml:/etc/crowdsec/scenarios/http-crawl-non_statics.yaml:ro
+      - crowdsec_data:/var/lib/crowdsec/data
       - ./traefik/logs:/var/log/traefik:ro
     networks:
       - media_net
