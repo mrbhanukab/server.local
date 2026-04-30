@@ -9,14 +9,31 @@ services:
       - --providers.file.directory=/etc/traefik/dynamic
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.forwardedheaders.trustedips=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
+      - --experimental.plugins.bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      - --experimental.plugins.bouncer.version=v1.4.4
       - --log.level=INFO
       - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
     ports:
       - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik:/etc/traefik/dynamic:ro
       - ./certs:/certs:ro
+      - ./traefik/logs:/var/log/traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.enabled=true
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecMode=stream
+
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecLapiScheme=http
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecLapiHost=crowdsec:8080
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecLapiKey=${CROWDSEC_LAPI_KEY}
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecEnabled=true
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecHost=crowdsec:7422
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecFailureBlock=true
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecUnreachableBlock=true
     networks:
       - media_net
     restart: always
@@ -33,6 +50,21 @@ services:
       - ./ddclient:/config
     restart: always
 
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      - COLLECTIONS=crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
+      - BOUNCER_KEY_TRAEFIK=${CROWDSEC_LAPI_KEY}
+      - TZ=${TZ}
+    volumes:
+      - ./crowdsec/acquis.d:/etc/crowdsec/acquis.d:ro
+      - crowdsec_data:/var/lib/crowdsec/data
+      - ./traefik/logs:/var/log/traefik:ro
+    networks:
+      - media_net
+    restart: always
+
   gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
@@ -41,8 +73,11 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8080:8080 # qBittorrent Web UI
-      - 9696:9696 # Prowlarr Web UI
+      - ${LAN_IP}:8080:8080 # qBittorrent Web UI (LAN)
+      - ${TAILSCALE_IP}:8080:8080 # qBittorrent Web UI (Tailscale)
+      - ${LAN_IP}:9696:9696 # Prowlarr Web UI (LAN)
+      - ${TAILSCALE_IP}:9696:9696 # Prowlarr Web UI (Tailscale)
+
     environment:
       - VPN_SERVICE_PROVIDER=airvpn
       - VPN_TYPE=wireguard
@@ -107,7 +142,9 @@ services:
       - ./sonarr:/config
       - ${MEDIA_DIR}:/data
     ports:
-      - 8989:8989
+      - ${LAN_IP}:8989:8989
+      - ${TAILSCALE_IP}:8989:8989
+
     networks:
       - media_net
     healthcheck:
@@ -128,7 +165,9 @@ services:
       - ./radarr:/config
       - ${MEDIA_DIR}:/data
     ports:
-      - 7878:7878
+      - ${LAN_IP}:7878:7878
+      - ${TAILSCALE_IP}:7878:7878
+
     networks:
       - media_net
     healthcheck:
@@ -149,7 +188,9 @@ services:
       - ./bazarr:/config
       - ${MEDIA_DIR}:/data
     ports:
-      - 6767:6767
+      - ${LAN_IP}:6767:6767
+      - ${TAILSCALE_IP}:6767:6767
+
     networks:
       - media_net
     healthcheck:
@@ -169,7 +210,9 @@ services:
     volumes:
       - ./jellyseerr:/app/config
     ports:
-      - 5055:5055
+      - ${LAN_IP}:5055:5055
+      - ${TAILSCALE_IP}:5055:5055
+
     networks:
       - media_net
     labels:
@@ -177,6 +220,8 @@ services:
       - traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.mrbhanuka.dev`)
       - traefik.http.routers.jellyseerr.entrypoints=websecure
       - traefik.http.routers.jellyseerr.tls=true
+      - traefik.http.routers.jellyseerr.middlewares=crowdsec@docker
+
       - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
     healthcheck:
       test:
@@ -197,7 +242,9 @@ services:
       - ./jellyfin:/config
       - ${MEDIA_DIR}:/data
     ports:
-      - 8096:8096
+      - ${LAN_IP}:8096:8096
+      - ${TAILSCALE_IP}:8096:8096
+
     networks:
       - media_net
     labels:
@@ -205,6 +252,8 @@ services:
       - traefik.http.routers.jellyfin.rule=Host(`jellyfin.mrbhanuka.dev`)
       - traefik.http.routers.jellyfin.entrypoints=websecure
       - traefik.http.routers.jellyfin.tls=true
+      - traefik.http.routers.jellyfin.middlewares=crowdsec@docker
+
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
@@ -217,3 +266,6 @@ networks:
   media_net:
     name: media_net
     driver: bridge
+
+volumes:
+  crowdsec_data:
