@@ -1,0 +1,5 @@
+*
+!.gitignore
+!acquis.d/appsec.yaml
+!acquis.d/traefik.yaml
+!http-crawl-non_statics.yaml
