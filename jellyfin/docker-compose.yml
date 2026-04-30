@@ -1,4 +1,38 @@
 services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=media_net
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    networks:
+      - media_net
+    restart: always
+
+  ddclient:
+    image: lscr.io/linuxserver/ddclient:latest
+    container_name: ddclient
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./ddclient:/config
+    restart: always
+
   gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
@@ -138,6 +172,12 @@ services:
       - 5055:5055
     networks:
       - media_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.mrbhanuka.dev`)
+      - traefik.http.routers.jellyseerr.entrypoints=websecure
+      - traefik.http.routers.jellyseerr.tls=true
+      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
     healthcheck:
       test:
         ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/status || exit 1"]
@@ -160,6 +200,12 @@ services:
       - 8096:8096
     networks:
       - media_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyfin.rule=Host(`jellyfin.mrbhanuka.dev`)
+      - traefik.http.routers.jellyfin.entrypoints=websecure
+      - traefik.http.routers.jellyfin.tls=true
+      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
