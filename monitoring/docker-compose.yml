@@ -1,0 +1,25 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    env_file:
+      - .env
+    ports:
+      - ${LAN_IP}:3001:3001
+      - ${TAILSCALE_IP}:3001:3001
+    volumes:
+      - ./uptime-kuma-data:/app/data
+    restart: always
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    env_file:
+      - .env
+    ports:
+      - ${LAN_IP}:8084:8080
+      - ${TAILSCALE_IP}:8084:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dozzle-data:/data
+    restart: unless-stopped
