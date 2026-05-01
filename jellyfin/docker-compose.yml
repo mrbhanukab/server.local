@@ -263,6 +263,24 @@ services:
       retries: 3
     restart: always
 
+  unmanic:
+    image: josh5/unmanic:latest
+    container_name: unmanic
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./unmanic:/config
+      - ${MEDIA_DIR}:/library
+      - ./unmanic/cache:/tmp/unmanic
+    ports:
+      - ${LAN_IP}:8888:8888
+      - ${TAILSCALE_IP}:8888:8888
+    networks:
+      - media_net
+    restart: always
+
 networks:
   media_net:
     name: media_net

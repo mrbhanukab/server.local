@@ -1,0 +1,12 @@
+services:
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-pdf
+    env_file:
+      - .env
+    ports:
+      - ${LAN_IP}:8082:8080
+      - ${TAILSCALE_IP}:8082:8080
+    volumes:
+      - ./data:/configs
+    restart: unless-stopped
