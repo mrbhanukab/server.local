@@ -8,5 +8,15 @@ services:
       - ${LAN_IP}:8082:8080
       - ${TAILSCALE_IP}:8082:8080
     volumes:
-      - ./data:/configs
+      - ./stirling-pdf-data:/configs
+    restart: unless-stopped
+
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: it-tools
+    env_file:
+      - .env
+    ports:
+      - ${LAN_IP}:8083:80
+      - ${TAILSCALE_IP}:8083:80
     restart: unless-stopped
