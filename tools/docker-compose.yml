@@ -7,6 +7,7 @@ services:
     ports:
       - ${LAN_IP}:8082:8080
       - ${TAILSCALE_IP}:8082:8080
+      - 127.0.0.1:8082:8080
     volumes:
       - ./stirling-pdf-data:/configs
     restart: unless-stopped
@@ -19,4 +20,5 @@ services:
     ports:
       - ${LAN_IP}:8083:80
       - ${TAILSCALE_IP}:8083:80
+      - 127.0.0.1:8083:80
     restart: unless-stopped

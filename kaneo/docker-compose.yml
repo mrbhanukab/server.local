@@ -23,6 +23,7 @@ services:
     ports:
       - ${LAN_IP}:1337:1337
       - ${TAILSCALE_IP}:1337:1337
+      - 127.0.0.1:1337:1337
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,6 +37,7 @@ services:
     ports:
       - ${LAN_IP}:5173:5173
       - ${TAILSCALE_IP}:5173:5173
+      - 127.0.0.1:5173:5173
     depends_on:
       - api
     restart: unless-stopped

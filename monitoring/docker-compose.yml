@@ -7,6 +7,7 @@ services:
     ports:
       - ${LAN_IP}:3001:3001
       - ${TAILSCALE_IP}:3001:3001
+      - 127.0.0.1:3001:3001
     volumes:
       - ./uptime-kuma-data:/app/data
     restart: always
@@ -19,6 +20,7 @@ services:
     ports:
       - ${LAN_IP}:8084:8080
       - ${TAILSCALE_IP}:8084:8080
+      - 127.0.0.1:8084:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./dozzle-data:/data
