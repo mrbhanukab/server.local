@@ -132,29 +132,6 @@ services:
         condition: service_healthy
     restart: always
 
-  sonarr:
-    image: ghcr.io/linuxserver/sonarr
-    container_name: sonarr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ./sonarr:/config
-      - ${MEDIA_DIR}:/data
-    ports:
-      - ${LAN_IP}:8989:8989
-      - ${TAILSCALE_IP}:8989:8989
-
-    networks:
-      - media_net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8989/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: always
-
   radarr:
     image: ghcr.io/linuxserver/radarr
     container_name: radarr
