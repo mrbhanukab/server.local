@@ -69,6 +69,8 @@ services:
   gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
+    profiles:
+      - download
     cap_add:
       - NET_ADMIN
     devices:
@@ -102,6 +104,8 @@ services:
   qbittorrent:
     image: ghcr.io/linuxserver/qbittorrent
     container_name: qbittorrent
+    profiles:
+      - download
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -120,6 +124,8 @@ services:
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
     container_name: prowlarr
+    profiles:
+      - download
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -158,6 +164,8 @@ services:
   bazarr:
     image: ghcr.io/linuxserver/bazarr
     container_name: bazarr
+    profiles:
+      - download
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -243,6 +251,8 @@ services:
   unmanic:
     image: josh5/unmanic:latest
     container_name: unmanic
+    profiles:
+      - optimize
     environment:
       - PUID=${PUID}
       - PGID=${PGID}

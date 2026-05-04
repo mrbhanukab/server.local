@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+
+set -eu
+
+usage() {
+  echo "Usage: ./containers up|down [download|optimize|all]"
+}
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  usage
+  exit 1
+fi
+
+action="$1"
+profile="${2:-default}"
+
+if [ "$action" != "up" ] && [ "$action" != "down" ]; then
+  usage
+  exit 1
+fi
+
+case "$profile" in
+  default)
+    if [ "$action" = "up" ]; then
+      docker compose up -d
+    else
+      docker compose stop traefik ddclient crowdsec jellyseerr jellyfin radarr
+    fi
+    ;;
+  download)
+    if [ "$action" = "up" ]; then
+      docker compose --profile download up -d
+    else
+      docker compose --profile download stop
+    fi
+    ;;
+  optimize)
+    if [ "$action" = "up" ]; then
+      docker compose --profile optimize up -d
+    else
+      docker compose --profile optimize stop
+    fi
+    ;;
+  all)
+    if [ "$action" = "up" ]; then
+      docker compose --profile download --profile optimize up -d
+    else
+      docker compose down
+    fi
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
