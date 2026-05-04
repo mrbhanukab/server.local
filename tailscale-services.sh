@@ -8,9 +8,5 @@ tailscale serve --service=svc:kaneo-api --https=443 http://127.0.0.1:1337
 tailscale serve --service=svc:uptime --https=443 http://127.0.0.1:3001
 tailscale serve --service=svc:dozzle --https=443 http://127.0.0.1:8084
 
-# --- Tools ---
-tailscale serve --service=svc:pdf --https=443 http://127.0.0.1:8082
-tailscale serve --service=svc:it-tools --https=443 http://127.0.0.1:8083
-
 echo "Tailscale services have been started in the background."
 echo "Use 'tailscale serve status' to check the current configuration."
