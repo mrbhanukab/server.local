@@ -3,7 +3,7 @@
 set -eu
 
 usage() {
-  echo "Usage: ./containers up|down [download|optimize|all]"
+  echo "Usage: ./containers up|down [download]"
 }
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
@@ -32,20 +32,6 @@ case "$profile" in
       docker compose --profile download up -d
     else
       docker compose --profile download stop
-    fi
-    ;;
-  optimize)
-    if [ "$action" = "up" ]; then
-      docker compose --profile optimize up -d
-    else
-      docker compose --profile optimize stop
-    fi
-    ;;
-  all)
-    if [ "$action" = "up" ]; then
-      docker compose --profile download --profile optimize up -d
-    else
-      docker compose down
     fi
     ;;
   *)
