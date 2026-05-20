@@ -1,0 +1,13 @@
+services:
+  dockge:
+    image: louislam/dockge:1
+    restart: unless-stopped
+    ports:
+      - ${LAN_IP}:5001:5001
+      - ${TAILSCALE_IP}:5001:5001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+      - /home/dietpi/server.local:/home/dietpi/server.local
+    environment:
+      - DOCKGE_STACKS_DIR=/home/dietpi/server.local
