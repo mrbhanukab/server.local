@@ -13,7 +13,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
 
   api:
     image: ghcr.io/usekaneo/api:latest
@@ -27,7 +27,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
 
   web:
     image: ghcr.io/usekaneo/web:latest
@@ -40,4 +40,4 @@ services:
       - 127.0.0.1:5173:5173
     depends_on:
       - api
-    restart: unless-stopped
+    restart: always
