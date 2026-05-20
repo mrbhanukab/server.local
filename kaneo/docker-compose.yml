@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     environment:
-      - =/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ./data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +17,7 @@ services:
 
   kaneo:
     image: ghcr.io/usekaneo/kaneo:latest
+    container_name: kaneo-app
     ports:
       - ${LAN_IP}:5173:5173
       - ${TAILSCALE_IP}:5173:5173
