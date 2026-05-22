@@ -15,5 +15,9 @@ tailscale serve --service=svc:dockge --https=443 http://$LOCAL_IP:5001
 # --- Metube ---
 tailscale serve --service=svc:metube --https=443 http://$LOCAL_IP:8081
 
+
+# --- MySpeed ---
+tailscale serve --service=svc:localspeed --https=443 http://$LOCAL_IP:5216
+
 echo "Tailscale services have been started in the background."
 echo "Use 'tailscale serve status' to check the current configuration."
