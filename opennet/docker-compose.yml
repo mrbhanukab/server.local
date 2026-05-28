@@ -48,6 +48,8 @@ services:
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
     volumes:
       - ./ddclient:/config
+    networks:
+      - media_net
     restart: always
 
   crowdsec:
@@ -57,6 +59,7 @@ services:
       - COLLECTIONS=crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
       - BOUNCER_KEY_TRAEFIK=${CROWDSEC_LAPI_KEY}
       - TZ=${TZ}
+      - APPSEC_ENABLED=true
     volumes:
       - ./crowdsec/acquis.d:/etc/crowdsec/acquis.d:ro
       - ./crowdsec/http-crawl-non_statics.yaml:/etc/crowdsec/scenarios/http-crawl-non_statics.yaml:ro
