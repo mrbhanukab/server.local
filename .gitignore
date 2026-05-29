@@ -1,2 +1,3 @@
 .crush/
 mise.toml
+common.env.cp

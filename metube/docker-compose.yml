@@ -4,7 +4,7 @@ services:
     container_name: metube
     restart: unless-stopped
     env_file:
-      - .env
+      - ../common.env
     ports:
       - ${LAN_IP}:8081:8081
       - ${TAILSCALE_IP}:8081:8081

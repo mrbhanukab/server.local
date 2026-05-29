@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: kaneo-postgres
     env_file:
-      - .env
+      - ../common.env
     volumes:
      - ./data:/var/lib/postgresql/data
     restart: always
@@ -20,7 +20,7 @@ services:
       - ${LAN_IP}:5173:5173
       - ${TAILSCALE_IP}:5173:5173
     env_file:
-      - .env
+      - ../common.env
     depends_on:
       postgres:
         condition: service_healthy
