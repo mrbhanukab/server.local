@@ -2,6 +2,8 @@ services:
   traefik:
     image: traefik:v3.6
     container_name: traefik
+    env_file:
+      - ../common.env
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -33,7 +35,7 @@ services:
       - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecEnabled=true
       - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecHost=crowdsec:7422
       - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecFailureBlock=true
-      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecUnreachableBlock=true
+      - traefik.http.middlewares.crowdsec.plugin.bouncer.crowdsecAppsecUnreachableBlock=false
     networks:
       - media_net
     restart: always
@@ -41,11 +43,8 @@ services:
   ddclient:
     image: lscr.io/linuxserver/ddclient:latest
     container_name: ddclient
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    env_file:
+      - ../common.env
     volumes:
       - ./ddclient:/config
     networks:
@@ -55,11 +54,11 @@ services:
   crowdsec:
     image: crowdsecurity/crowdsec:latest
     container_name: crowdsec
+    env_file:
+      - ../common.env
     environment:
       - COLLECTIONS=crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
       - BOUNCER_KEY_TRAEFIK=${CROWDSEC_LAPI_KEY}
-      - TZ=${TZ}
-      - APPSEC_ENABLED=true
     volumes:
       - ./crowdsec/acquis.d:/etc/crowdsec/acquis.d:ro
       - ./crowdsec/http-crawl-non_statics.yaml:/etc/crowdsec/scenarios/http-crawl-non_statics.yaml:ro

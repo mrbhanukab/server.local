@@ -2,6 +2,8 @@ services:
   gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
+    env_file:
+      - ../common.env
     profiles:
       - download
     cap_add:
@@ -17,13 +19,6 @@ services:
     environment:
       - VPN_SERVICE_PROVIDER=airvpn
       - VPN_TYPE=wireguard
-      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
-      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
-      - FIREWALL_VPN_INPUT_PORTS=${FIREWALL_VPN_INPUT_PORTS}
-      - WIREGUARD_MTU=1280
-      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
-      - TZ=${TZ}
     networks:
       - media_net
     healthcheck:
@@ -37,14 +32,12 @@ services:
   qbittorrent:
     image: ghcr.io/linuxserver/qbittorrent
     container_name: qbittorrent
+    env_file:
+      - ../common.env
     profiles:
       - download
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
       - WEBUI_PORT=8080
-      - TORRENTING_PORT=${FIREWALL_VPN_INPUT_PORTS}
     volumes:
       - ./qbittorrent:/config
       - ${MEDIA_DIR}:/data
@@ -57,12 +50,10 @@ services:
   prowlarr:
     image: ghcr.io/linuxserver/prowlarr
     container_name: prowlarr
+    env_file:
+      - ../common.env
     profiles:
       - download
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
     volumes:
       - ./prowlarr:/config
     network_mode: service:gluetun
@@ -74,10 +65,8 @@ services:
   radarr:
     image: ghcr.io/linuxserver/radarr
     container_name: radarr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    env_file:
+      - ../common.env
     volumes:
       - ./radarr:/config
       - ${MEDIA_DIR}:/data
@@ -97,12 +86,10 @@ services:
   bazarr:
     image: ghcr.io/linuxserver/bazarr
     container_name: bazarr
+    env_file:
+      - ../common.env
     profiles:
       - download
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
     volumes:
       - ./bazarr:/config
       - ${MEDIA_DIR}:/data
@@ -122,10 +109,8 @@ services:
   jellyseerr:
     image: ghcr.io/fallenbagel/jellyseerr:latest
     container_name: jellyseerr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    env_file:
+      - ../common.env
     volumes:
       - ./jellyseerr:/app/config
     ports:
@@ -140,8 +125,7 @@ services:
       - traefik.http.routers.jellyseerr.entrypoints=websecure
       - traefik.http.routers.jellyseerr.tls=true
       - traefik.http.routers.jellyseerr.middlewares=crowdsec@docker
-
-      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
+      - traefik.http.routers.jellyseerr.loadbalancer.server.port=5055
     healthcheck:
       test:
         ["CMD-SHELL", "wget -qO- http://localhost:5055/api/v1/status || exit 1"]
@@ -153,10 +137,8 @@ services:
   jellyfin:
     image: ghcr.io/linuxserver/jellyfin
     container_name: jellyfin
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    env_file:
+      - ../common.env
     volumes:
       - ./jellyfin:/config
       - ${MEDIA_DIR}:/data
@@ -172,8 +154,7 @@ services:
       - traefik.http.routers.jellyfin.entrypoints=websecure
       - traefik.http.routers.jellyfin.tls=true
       - traefik.http.routers.jellyfin.middlewares=crowdsec@docker
-
-      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+      - traefik.http.routers.jellyfin.loadbalancer.server.port=8096
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s

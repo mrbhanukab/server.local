@@ -2,6 +2,8 @@ services:
   myspeed:
     image: germannewsmaker/myspeed
     container_name: MySpeed
+    env_file:
+      - ../common.env
     ports:
       - ${LAN_IP}:5216:5216
       - ${TAILSCALE_IP}:5216:5216

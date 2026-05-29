@@ -2,6 +2,8 @@ services:
   dockge:
     image: louislam/dockge:1.5.0
     container_name: dockge
+    env_file:
+      - ../common.env
     restart: always
     ports:
       - ${LAN_IP}:5001:5001
@@ -12,11 +14,12 @@ services:
       - /home/dietpi/server.local:/home/dietpi/server.local
     environment:
       - DOCKGE_STACKS_DIR=/home/dietpi/server.local
+
   dozzle:
     image: amir20/dozzle:latest
     container_name: dozzle
     env_file:
-      - .env
+      - ../common.env
     ports:
       - ${LAN_IP}:8084:8080
       - ${TAILSCALE_IP}:8084:8080

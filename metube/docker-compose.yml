@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      - TZ=${TZ}
     ports:
       - ${LAN_IP}:8081:8081
       - ${TAILSCALE_IP}:8081:8081
