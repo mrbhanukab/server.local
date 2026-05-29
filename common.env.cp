@@ -67,3 +67,7 @@ DISABLE_GUEST_ACCESS=true
 DISABLE_REGISTRATION=true
 # Optional: custom device auth clients (comma-separated)
 # DEVICE_AUTH_CLIENT_IDS=kaneo-cli,kaneo-mcp
+
+# Set these to the actual IP/URL of your server (e.g., http://192.168.1.107:5173)
+# DO NOT use 'localhost' if accessing from another machine.
+KANEO_CLIENT_URL=http://<YOUR_SERVER_IP>:5173
