@@ -143,6 +143,34 @@ cat > opennet/certs/cloudflare-origin.key << 'EOF'
 EOF
 ```
 
+## DDNS Setup (ddclient)
+
+ddclient updates your Cloudflare DNS with your public IP so domains point to your server.
+
+### Configure ddclient
+
+1. Copy the sample config:
+   ```bash
+   cp opennet/ddclient/ddclient\ copy.conf opennet/ddclient/ddclient.conf
+   ```
+
+2. Edit `opennet/ddclient/ddclient.conf`:
+   - Set `zone` to your domain (e.g., `mrbhanuka.dev`)
+   - Set `login` to your Cloudflare email or API token
+   - Update the records list if needed (default: `jellyfin.mrbhanuka.dev,jellyseerr.mrbhanuka.dev`)
+
+3. Restart ddclient:
+   ```bash
+   cd opennet; docker compose restart ddclient
+   ```
+
+4. Verify it works:
+   ```bash
+   docker logs ddclient
+   ```
+
+   Look for: `SUCCESS: updating myrecord.mrbhanuka.dev`
+
 ## Updating Stacks
 
 ```bash
