@@ -42,32 +42,3 @@ SERVER_COUNTRIES=
 # --- MeTube ---
 # Path to your separate disk for downloads
 METUBE_DOWNLOADS_DIR=/mnt/data/metube-downloads
-
-# --- Kaneo ---
-POSTGRES_DB=kaneo
-POSTGRES_USER=kaneo
-POSTGRES_PASSWORD=
-PGDATA=/var/lib/postgresql/data/pgdata
-# Built from POSTGRES_* vars; do not set manually
-# DATABASE_URL=
-
-# Authentication secret (min 32 chars) — generate with:
-# openssl rand -hex 32
-AUTH_SECRET=
-
-# --- GitHub Integration (Kaneo) ---
-# Setup: https://kaneo.app/docs/core/integrations/github/setup
-GITHUB_APP_ID=
-GITHUB_WEBHOOK_SECRET=
-GITHUB_PRIVATE_KEY=
-GITHUB_APP_NAME=app-name
-
-# Disable guest access and self-registration (Kaneo)
-DISABLE_GUEST_ACCESS=true
-DISABLE_REGISTRATION=true
-# Optional: custom device auth clients (comma-separated)
-# DEVICE_AUTH_CLIENT_IDS=kaneo-cli,kaneo-mcp
-
-# Set these to the actual IP/URL of your server (e.g., http://192.168.1.107:5173)
-# DO NOT use 'localhost' if accessing from another machine.
-KANEO_CLIENT_URL=http://<YOUR_SERVER_IP>:5173
