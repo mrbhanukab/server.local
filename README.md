@@ -65,16 +65,28 @@ docker compose up -d
 
 ## Tailscale Services Router
 
-Expose local services via Tailscale Funnel for remote access:
+### Step 1: Enable Service Hosting
+
+1. Go to [Tailscale admin console](https://login.tailscale.com/admin/machines)
+2. Find your server device → Click **Edit**
+3. Under **Service hosting**, add your service tags (e.g., `tag:dozzle`, `tag:dockge`, `tag:metube`, `tag:localspeed`)
+4. Save changes
+
+### Step 2: Run the Router
 
 ```bash
-# Set your LAN IP in the script
-# Edit tailscale-services.sh and replace [IP_ADDRESS] with your actual LAN IP
-
-# Run the router
 ./tailscale-services.sh
+```
 
-# Check status
+### Step 3: Approve in Dashboard
+
+1. Go to [Tailscale admin console](https://login.tailscale.com/admin/services)
+2. Find the pending service approvals
+3. Approve each service
+
+### Verify
+
+```bash
 tailscale serve status
 ```
 
@@ -99,6 +111,36 @@ Media directories require correct ownership:
 
 ```bash
 sudo chown -R 1000:1000 /mnt/data/media
+```
+
+## TLS/SSL Certificates
+
+### Cloudflare Origin Certificate (for Traefik)
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → your domain → **SSL/TLS** → **Origin Server**
+2. Click **Create Certificate**
+3. Leave defaults (RSA 2048, 15 years) → Click **Create**
+4. Copy the **Certificate** and **Private Key**
+
+### Install Certificates
+
+```bash
+# Create certs directory
+mkdir -p opennet/certs
+
+# Save certificate
+cat > opennet/certs/cloudflare-origin.crt << 'EOF'
+-----BEGIN CERTIFICATE-----
+<paste certificate here>
+-----END CERTIFICATE-----
+EOF
+
+# Save private key
+cat > opennet/certs/cloudflare-origin.key << 'EOF'
+-----BEGIN PRIVATE KEY-----
+<paste private key here>
+-----END PRIVATE KEY-----
+EOF
 ```
 
 ## Updating Stacks
