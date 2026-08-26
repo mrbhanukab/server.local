@@ -42,17 +42,21 @@ wait_for_healthy() {
                 health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null || echo "none")
             fi
             
+            # Log status
             log "  $service: running=$running health=$health"
             
-            if [ "$running" = "true" ]; then
-                if [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ -z "$health" ]; then
-                    continue
-                else
-                    all_healthy=false
-                fi
-            else
+            if [ "$running" != "true" ]; then
                 all_healthy=false
+                continue
             fi
+            
+            # Healthy or no healthcheck (empty/none) = good
+            if [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ -z "$health" ]; then
+                continue
+            fi
+            
+            # starting or <nil> = still starting, wait
+            all_healthy=false
         done
         
         if [ "$all_healthy" = true ]; then
@@ -60,7 +64,6 @@ wait_for_healthy() {
             return 0
         fi
         
-        log "  (not all healthy yet, waiting...)"
         sleep $interval
         elapsed=$((elapsed + interval))
     done
