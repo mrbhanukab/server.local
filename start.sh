@@ -30,40 +30,28 @@ wait_for_healthy() {
         local all_healthy=true
         
         for service in $services; do
-            # Get container actual name from docker
-            local container_name=$(docker compose -f "$compose_file" ps "$service" --format json 2>/dev/null | grep -o '"Name":"[^"]*"' | cut -d'"' -f4)
+            # Check if container exists - try short name first, then with suffix
+            local running=false
+            local health="none"
             
-            if [ -z "$container_name" ]; then
-                # Fallback: try service name directly
-                container_name="$service"
+            if docker inspect "$service" &>/dev/null; then
+                running=$(docker inspect --format='{{.State.Running}}' "$service" 2>/dev/null)
+                health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "none")
+            elif docker inspect "${service}-1" &>/dev/null; then
+                running=$(docker inspect --format='{{.State.Running}}' "${service}-1" 2>/dev/null)
+                health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null || echo "none")
+            else
+                running=false
             fi
             
-            # Check if container exists
-            if docker inspect "$container_name" &>/dev/null; then
-                local health=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null || echo "<nil>")
-                local running=$(docker inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null || echo "false")
-                
-                if [ "$health" = "unhealthy" ]; then
-                    log "Container $service is unhealthy!"
-                    all_healthy=false
-                    break
-                elif [ "$health" = "healthy" ]; then
+            if [ "$running" = "true" ]; then
+                if [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ -z "$health" ]; then
                     continue
-                elif [ "$health" = "<nil>" ] || [ -z "$health" ]; then
-                    # No healthcheck, just check if running
-                    if [ "$running" = "true" ]; then
-                        continue
-                    else
-                        all_healthy=false
-                        break
-                    fi
                 else
-                    # Health check exists but not healthy yet
                     all_healthy=false
                     break
                 fi
             else
-                # Container not found yet
                 all_healthy=false
                 break
             fi
@@ -84,11 +72,12 @@ wait_for_healthy() {
 
 # Step 1: Stop all containers
 log "Stopping all containers..."
-docker compose -f "$BASE_DIR/opennet/docker-compose.yml" down 2>/dev/null || true
-docker compose -f "$BASE_DIR/jellyfin/docker-compose.yml" down 2>/dev/null || true
-docker compose -f "$BASE_DIR/metube/docker-compose.yml" down 2>/dev/null || true
-docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" down 2>/dev/null || true
-docker compose -f "$BASE_DIR/docker/docker-compose.yml" down 2>/dev/null || true
+docker compose -f "$BASE_DIR/opennet/docker-compose.yml" down 2>/dev/null &
+docker compose -f "$BASE_DIR/jellyfin/docker-compose.yml" down 2>/dev/null &
+docker compose -f "$BASE_DIR/metube/docker-compose.yml" down 2>/dev/null &
+docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" down 2>/dev/null &
+docker compose -f "$BASE_DIR/docker/docker-compose.yml" down 2>/dev/null &
+wait
 
 log "All containers stopped."
 
