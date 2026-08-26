@@ -1,9 +1,0 @@
-services:
-  # All services are defined in included compose files
-
-include:
-  - path: opennet/docker-compose.yml
-  - path: jellyfin/docker-compose.yml
-  - path: metube/docker-compose.yml
-  - path: myspeed/docker-compose.yml
-  - path: docker/docker-compose.yml
