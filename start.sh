@@ -33,7 +33,6 @@ wait_for_healthy() {
     fi
 
     log "Checking health for: $(echo $services | tr '\n' ' ')"
-    local check_start=$(date +%s)
 
     while true; do
         local elapsed=$(($(date +%s) - start_time))
@@ -45,19 +44,33 @@ wait_for_healthy() {
 
         local all_healthy=true
         local all_running=true
+        local check_health=""
         
         for service in $services; do
             local running="false"
             local health="none"
+            local found="no"
             
+            # Try direct name
             if docker inspect "$service" &>/dev/null; then
+                found="yes"
                 running=$(docker inspect --format='{{.State.Running}}' "$service" 2>/dev/null)
-                health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "none")
+                health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null)
+                [ -z "$health" ] && health="none"
+            # Try with -1 suffix
             elif docker inspect "${service}-1" &>/dev/null; then
+                found="yes"
                 running=$(docker inspect --format='{{.State.Running}}' "${service}-1" 2>/dev/null)
-                health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null || echo "none")
-            else
-                running="false"
+                health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null)
+                [ -z "$health" ] && health="none"
+            fi
+            
+            check_health="$check_health $service[$running/$health]"
+            
+            if [ "$found" = "no" ]; then
+                all_running=false
+                all_healthy=false
+                continue
             fi
             
             if [ "$running" != "true" ]; then
@@ -68,7 +81,7 @@ wait_for_healthy() {
             
             if [ "$health" = "healthy" ]; then
                 continue
-            elif [ "$health" = "none" ] || [ -z "$health" ]; then
+            elif [ "$health" = "none" ]; then
                 if [ $elapsed -ge 10 ]; then
                     continue
                 fi
@@ -77,8 +90,10 @@ wait_for_healthy() {
             all_healthy=false
         done
         
+        log "  [$elapsed s] $check_health"
+        
         if [ "$all_healthy" = true ]; then
-            log "All healthy (${elapsed}s)"
+            log "All healthy"
             return 0
         fi
         
