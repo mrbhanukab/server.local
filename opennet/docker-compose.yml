@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.6
+    image: traefik:latest
     container_name: traefik
     env_file:
       - ../common.env
