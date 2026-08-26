@@ -1,0 +1,15 @@
+[Unit]
+Description=Start Docker containers on boot
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/dietpi/server.local/start.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+User=dietpi
+
+[Install]
+WantedBy=multi-user.target

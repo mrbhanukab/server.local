@@ -25,6 +25,48 @@ TAILSCALE_IP=<tailscale-ip> # e.g., 100.x.x.x
 
 Find your Tailscale IP with: `tailscale ip -4`
 
+## Auto-Start on Boot
+
+A systemd service ensures all containers start automatically after a reboot or power loss.
+
+### Setup
+
+```bash
+# Symlink the service file
+sudo ln -s /home/dietpi/server.local/docker-containers-start.service \
+           /etc/systemd/system/docker-containers-start.service
+
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable the service (starts on boot)
+sudo systemctl enable docker-containers-start.service
+
+# Start now (without rebooting)
+sudo systemctl start docker-containers-start.service
+```
+
+### Manage
+
+```bash
+# Check status
+sudo systemctl status docker-containers-start.service
+
+# View logs
+sudo journalctl -u docker-containers-start.service -f
+
+# View startup log
+cat ~/docker-startup.log
+```
+
+### Disable
+
+```bash
+sudo systemctl disable docker-containers-start.service
+sudo rm /etc/systemd/system/docker-containers-start.service
+sudo systemctl daemon-reload
+```
+
 ## Starting Services
 
 ### Full Media Stack (Jellyfin, Radarr, Bazarr, Prowlarr, qBittorrent)
