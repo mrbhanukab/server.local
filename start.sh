@@ -10,18 +10,20 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-log_change() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+cleanup() {
+    log "Stopping all containers..."
+    docker compose -f "$BASE_DIR/opennet/docker-compose.yml" down 2>/dev/null &
+    docker compose -f "$BASE_DIR/jellyfin/docker-compose.yml" down 2>/dev/null &
+    docker compose -f "$BASE_DIR/metube/docker-compose.yml" down 2>/dev/null &
+    docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" down 2>/dev/null &
+    docker compose -f "$BASE_DIR/docker/docker-compose.yml" down 2>/dev/null &
+    wait
 }
 
 wait_for_healthy() {
     local compose_file=$1
     local timeout=${2:-120}
-    local elapsed=0
-    local interval=2
-    local max_checks_without_health=10  # 10 iterations = 20 sec of no healthcheck
-
-    log "Waiting for containers in $compose_file to be healthy..."
+    local start_time=$(date +%s)
 
     # Get all service names from compose file
     local services=$(docker compose -f "$compose_file" config --services 2>/dev/null)
@@ -31,15 +33,18 @@ wait_for_healthy() {
         return 0
     fi
 
-    # Track last status to detect changes
-    declare -A last_status
-    
-    while [ $elapsed -lt $timeout ]; do
+    while true; do
+        local elapsed=$(($(date +%s) - start_time))
+        
+        if [ $elapsed -ge $timeout ]; then
+            log "TIMEOUT"
+            return 1
+        fi
+
         local all_healthy=true
-        declare -A current_status
+        local all_running=true
         
         for service in $services; do
-            # Check if container exists
             local running="false"
             local health="none"
             
@@ -49,69 +54,60 @@ wait_for_healthy() {
             elif docker inspect "${service}-1" &>/dev/null; then
                 running=$(docker inspect --format='{{.State.Running}}' "${service}-1" 2>/dev/null)
                 health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null || echo "none")
+            else
+                running="false"
             fi
             
-            current_status[$service]="$running:$health"
-            
             if [ "$running" != "true" ]; then
+                all_running=false
                 all_healthy=false
                 continue
             fi
             
-            # Healthy or no healthcheck (none) = good
-            if [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ -z "$health" ]; then
+            if [ "$health" = "healthy" ]; then
                 continue
+            elif [ "$health" = "none" ] || [ -z "$health" ]; then
+                # No healthcheck: healthy if running > 10 seconds
+                if [ $elapsed -ge 10 ]; then
+                    continue
+                fi
             fi
             
-            # starting = still starting, wait
             all_healthy=false
         done
         
-        # Log only on status change
-        for service in $services; do
-            if [ "${current_status[$service]}" != "${last_status[$service]:-}" ]; then
-                log_change "  $service: ${current_status[$service]}"
-            fi
-        done
-        
-        # Store current status
-        for service in $services; do
-            last_status[$service]="${current_status[$service]}"
-        done
-        
         if [ "$all_healthy" = true ]; then
-            log "All containers in $compose_file are healthy!"
             return 0
         fi
         
-        sleep $interval
-        elapsed=$((elapsed + interval))
+        if [ "$all_running" != "true" ]; then
+            return 1
+        fi
+        
+        sleep 2
     done
-    
-    log "Timeout waiting for containers in $compose_file"
-    return 0
 }
 
 # Step 1: Stop all containers
-log "Stopping all containers..."
-docker compose -f "$BASE_DIR/opennet/docker-compose.yml" down 2>/dev/null &
-docker compose -f "$BASE_DIR/jellyfin/docker-compose.yml" down 2>/dev/null &
-docker compose -f "$BASE_DIR/metube/docker-compose.yml" down 2>/dev/null &
-docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" down 2>/dev/null &
-docker compose -f "$BASE_DIR/docker/docker-compose.yml" down 2>/dev/null &
-wait
-
-log "All containers stopped."
+cleanup
 
 # Step 2: Start dockge/dozzle first
 log "Starting dockge & dozzle..."
 docker compose -f "$BASE_DIR/docker/docker-compose.yml" up -d
-wait_for_healthy "$BASE_DIR/docker/docker-compose.yml"
+if ! wait_for_healthy "$BASE_DIR/docker/docker-compose.yml"; then
+    log "FAILED"
+    cleanup
+    exit 1
+fi
 
 # Step 3: Start opennet
 log "Starting opennet..."
 docker compose -f "$BASE_DIR/opennet/docker-compose.yml" up -d
-wait_for_healthy "$BASE_DIR/opennet/docker-compose.yml"
+if ! wait_for_healthy "$BASE_DIR/opennet/docker-compose.yml"; then
+    log "FAILED"
+    cleanup
+    exit 1
+fi
 
 # Step 4: Start jellyfin
 log "Starting jellyfin..."
@@ -122,4 +118,4 @@ log "Starting metube and myspeed..."
 docker compose -f "$BASE_DIR/metube/docker-compose.yml" up -d
 docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" up -d
 
-log "Startup complete!"
+log "Done!"
