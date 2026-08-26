@@ -25,7 +25,6 @@ wait_for_healthy() {
     local timeout=${2:-120}
     local start_time=$(date +%s)
 
-    # Get all service names from compose file
     local services=$(docker compose -f "$compose_file" config --services 2>/dev/null)
     
     if [ -z "$services" ]; then
@@ -33,11 +32,14 @@ wait_for_healthy() {
         return 0
     fi
 
+    log "Checking health for: $(echo $services | tr '\n' ' ')"
+    local check_start=$(date +%s)
+
     while true; do
         local elapsed=$(($(date +%s) - start_time))
         
         if [ $elapsed -ge $timeout ]; then
-            log "TIMEOUT"
+            log "TIMEOUT after ${timeout}s"
             return 1
         fi
 
@@ -67,7 +69,6 @@ wait_for_healthy() {
             if [ "$health" = "healthy" ]; then
                 continue
             elif [ "$health" = "none" ] || [ -z "$health" ]; then
-                # No healthcheck: healthy if running > 10 seconds
                 if [ $elapsed -ge 10 ]; then
                     continue
                 fi
@@ -77,10 +78,12 @@ wait_for_healthy() {
         done
         
         if [ "$all_healthy" = true ]; then
+            log "All healthy (${elapsed}s)"
             return 0
         fi
         
         if [ "$all_running" != "true" ]; then
+            log "Some containers not running"
             return 1
         fi
         
@@ -88,33 +91,28 @@ wait_for_healthy() {
     done
 }
 
-# Step 1: Stop all containers
 cleanup
 
-# Step 2: Start dockge/dozzle first
 log "Starting dockge & dozzle..."
 docker compose -f "$BASE_DIR/docker/docker-compose.yml" up -d
 if ! wait_for_healthy "$BASE_DIR/docker/docker-compose.yml"; then
-    log "FAILED"
+    log "dockge/dozzle FAILED"
     cleanup
     exit 1
 fi
 
-# Step 3: Start opennet
 log "Starting opennet..."
 docker compose -f "$BASE_DIR/opennet/docker-compose.yml" up -d
 if ! wait_for_healthy "$BASE_DIR/opennet/docker-compose.yml"; then
-    log "FAILED"
+    log "opennet FAILED"
     cleanup
     exit 1
 fi
 
-# Step 4: Start jellyfin
 log "Starting jellyfin..."
 docker compose -f "$BASE_DIR/jellyfin/docker-compose.yml" up -d
 
-# Step 5: Start metube and myspeed
-log "Starting metube and myspeed..."
+log "Starting metube & myspeed..."
 docker compose -f "$BASE_DIR/metube/docker-compose.yml" up -d
 docker compose -f "$BASE_DIR/myspeed/docker-compose.yml" up -d
 
