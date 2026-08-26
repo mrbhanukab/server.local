@@ -31,7 +31,7 @@ wait_for_healthy() {
         
         for service in $services; do
             # Check if container exists - try short name first, then with suffix
-            local running=false
+            local running="false"
             local health="none"
             
             if docker inspect "$service" &>/dev/null; then
@@ -40,20 +40,18 @@ wait_for_healthy() {
             elif docker inspect "${service}-1" &>/dev/null; then
                 running=$(docker inspect --format='{{.State.Running}}' "${service}-1" 2>/dev/null)
                 health=$(docker inspect --format='{{.State.Health.Status}}' "${service}-1" 2>/dev/null || echo "none")
-            else
-                running=false
             fi
+            
+            log "  $service: running=$running health=$health"
             
             if [ "$running" = "true" ]; then
                 if [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ -z "$health" ]; then
                     continue
                 else
                     all_healthy=false
-                    break
                 fi
             else
                 all_healthy=false
-                break
             fi
         done
         
@@ -62,6 +60,7 @@ wait_for_healthy() {
             return 0
         fi
         
+        log "  (not all healthy yet, waiting...)"
         sleep $interval
         elapsed=$((elapsed + interval))
     done
