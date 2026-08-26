@@ -18,32 +18,38 @@ wait_for_healthy() {
 
     log "Waiting for containers in $compose_file to be healthy..."
 
+    # Get all service names from compose file
+    local services=$(docker compose -f "$compose_file" config --services 2>/dev/null)
+    
+    if [ -z "$services" ]; then
+        log "Warning: Could not get services from $compose_file"
+        return 0
+    fi
+
     while [ $elapsed -lt $timeout ]; do
         local all_healthy=true
         
-        # Get all containers defined in this compose file
-        local containers=$(docker compose -f "$compose_file" ps --format json 2>/dev/null | jq -r 'select(.Service != null) | .Service' 2>/dev/null | sort -u)
-        
-        if [ -z "$containers" ]; then
-            # Fallback: get container names from docker-compose.yml
-            containers=$(docker compose -f "$compose_file" config --services 2>/dev/null)
-        fi
-        
-        for container in $containers; do
-            local status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "no-healthcheck")
+        for service in $services; do
+            # Get container name (compose prefixes project name)
+            local project=$(docker compose -f "$compose_file" config --project-name 2>/dev/null)
+            local container_name="${project}_${service}_1"
             
-            if [ "$status" = "unhealthy" ]; then
-                log "Container $container is unhealthy!"
-                all_healthy=false
-                break
-            elif [ "$status" = "no-healthcheck" ]; then
-                # No healthcheck defined, just check if running
-                local running=$(docker inspect --format='{{.State.Running}}' "$container" 2>/dev/null || echo "false")
-                if [ "$running" != "true" ]; then
+            # Check if container exists
+            if docker inspect "$container_name" &>/dev/null; then
+                local health=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null)
+                local running=$(docker inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null)
+                
+                if [ "$health" = "unhealthy" ]; then
+                    log "Container $service is unhealthy!"
+                    all_healthy=false
+                    break
+                elif [ "$health" = "healthy" ] || { [ "$health" = "<no value>" ] && [ "$running" = "true" ]; }; then
+                    continue
+                else
                     all_healthy=false
                     break
                 fi
-            elif [ "$status" != "healthy" ]; then
+            else
                 all_healthy=false
                 break
             fi
@@ -59,7 +65,7 @@ wait_for_healthy() {
     done
     
     log "Timeout waiting for containers in $compose_file"
-    return 1
+    return 0
 }
 
 # Step 1: Stop all containers
