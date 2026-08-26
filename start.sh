@@ -82,7 +82,7 @@ wait_for_healthy() {
             if [ "$health" = "healthy" ]; then
                 continue
             elif [ "$health" = "none" ]; then
-                if [ $elapsed -ge 10 ]; then
+                if [ $elapsed -ge 20 ]; then
                     continue
                 fi
             fi
