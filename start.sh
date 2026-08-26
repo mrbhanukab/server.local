@@ -30,26 +30,40 @@ wait_for_healthy() {
         local all_healthy=true
         
         for service in $services; do
-            # Get container name (compose prefixes project name)
-            local project=$(docker compose -f "$compose_file" config --project-name 2>/dev/null)
-            local container_name="${project}_${service}_1"
+            # Get container actual name from docker
+            local container_name=$(docker compose -f "$compose_file" ps "$service" --format json 2>/dev/null | grep -o '"Name":"[^"]*"' | cut -d'"' -f4)
+            
+            if [ -z "$container_name" ]; then
+                # Fallback: try service name directly
+                container_name="$service"
+            fi
             
             # Check if container exists
             if docker inspect "$container_name" &>/dev/null; then
-                local health=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null)
-                local running=$(docker inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null)
+                local health=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null || echo "<nil>")
+                local running=$(docker inspect --format='{{.State.Running}}' "$container_name" 2>/dev/null || echo "false")
                 
                 if [ "$health" = "unhealthy" ]; then
                     log "Container $service is unhealthy!"
                     all_healthy=false
                     break
-                elif [ "$health" = "healthy" ] || { [ "$health" = "<no value>" ] && [ "$running" = "true" ]; }; then
+                elif [ "$health" = "healthy" ]; then
                     continue
+                elif [ "$health" = "<nil>" ] || [ -z "$health" ]; then
+                    # No healthcheck, just check if running
+                    if [ "$running" = "true" ]; then
+                        continue
+                    else
+                        all_healthy=false
+                        break
+                    fi
                 else
+                    # Health check exists but not healthy yet
                     all_healthy=false
                     break
                 fi
             else
+                # Container not found yet
                 all_healthy=false
                 break
             fi
