@@ -1,10 +1,13 @@
 [Unit]
 Description=Start Docker containers on boot
-After=docker.service network.target
+After=docker.service network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
 Requires=docker.service
 
 [Service]
 Type=oneshot
+WorkingDirectory=/home/dietpi/server.local
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do ip -4 addr show dev tailscale0 2>/dev/null | grep -q "inet " && exit 0; sleep 1; done; echo "Tailscale IP timed out"; exit 1'
 ExecStart=/home/dietpi/server.local/start.sh
 RemainAfterExit=yes
 StandardOutput=journal
