@@ -134,18 +134,18 @@ tailscale serve status
 
 ### Service Ports
 
-| Service    | Local Port | Remote Port | URL                        |
-|------------|------------|-------------|----------------------------|
-| Dockge     | 5001       | 443         | https://dockge.mrbhanuka.dev |
-| Dozzle     | 8084       | 443         | https://dozzle.mrbhanuka.dev |
-| MeTube     | 8081       | 443         | https://metube.mrbhanuka.dev |
-| MySpeed    | 5216       | 443         | https://myspeed.mrbhanuka.dev |
-| Jellyfin   | 8096       | via Traefik | https://jellyfin.mrbhanuka.dev |
-| Jellyseerr | 5055       | via Traefik | https://jellyseerr.mrbhanuka.dev |
-| Radarr     | 7878       | LAN only    |                            |
-| Bazarr     | 6767       | LAN only    |                            |
-| qBittorrent| 8080       | VPN only    |                            |
-| Prowlarr   | 9696       | VPN only    |                            |
+| Service    | Local Port | Remote Port |
+|------------|------------|-------------|
+| Dockge     | 5001       | 443         |
+| Dozzle     | 8084       | 443         |
+| MeTube     | 8081       | 443         |
+| MySpeed    | 5216       | 443         |
+| Jellyfin   | 8096       | via Traefik |
+| Jellyseerr | 5055       | via Traefik |
+| Radarr     | 7878       | LAN only    |
+| Bazarr     | 6767       | LAN only    |
+| qBittorrent| 8080       | VPN only    |
+| Prowlarr   | 9696       | VPN only    |
 
 ## Volume Permissions
 
