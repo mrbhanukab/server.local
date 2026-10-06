@@ -124,6 +124,47 @@ services:
       retries: 3
     restart: always
 
+  shelfarr:
+    image: ghcr.io/pedro-revez-silva/shelfarr:latest
+    container_name: shelfarr
+    env_file:
+      - ../common.env
+    profiles:
+      - download
+    environment:
+      - SOLID_QUEUE_IN_PUMA=1
+    volumes:
+      - ./shelfarr:/rails/storage
+      - ${MEDIA_DIR}:/data
+    ports:
+      - ${LAN_IP}:5056:80
+      - ${TAILSCALE_IP}:5056:80
+    networks:
+      - media_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: always
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    env_file:
+      - ../common.env
+    volumes:
+      - ./audiobookshelf/config:/config
+      - ./audiobookshelf/metadata:/metadata
+      - ${MEDIA_DIR}:/data
+    ports:
+      - ${LAN_IP}:13378:80
+      - ${TAILSCALE_IP}:13378:80
+    networks:
+      - media_net
+    restart: always
+
   jellyseerr:
     image: ghcr.io/fallenbagel/jellyseerr:latest
     container_name: jellyseerr
